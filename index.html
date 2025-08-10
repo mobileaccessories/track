@@ -1,27 +1,32 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Embedded Web App</title>
-  <style>
-    body {
-      margin: 0;
-      padding: 0;
-      background-color: #fbfbfb;
-    }
-    iframe {
-      border: none;
-      width: 100%;
-      height: 100vh;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>Tracking</title>
 </head>
 <body>
-  <iframe
-    src="https://script.google.com/macros/s/AKfycbwEG3SrXw4izq1BFhOcf-tlxnSiS19HpeRI1d4JNzwxOYXcA2blXzg_YTZ5p7fqLz-i/exec"
-    allow="camera; microphone"
-    sandbox="allow-scripts allow-same-origin allow-forms"
-  ></iframe>
+  <iframe id="trackingFrame" width="100%" height="500"></iframe>
+
+  <script>
+    // Read the order and code from the GitHub page URL
+    const params = new URLSearchParams(window.location.search);
+    const order = params.get("order");
+    const code = params.get("code");
+
+    // Base link to your Google Apps Script web app
+    const baseUrl = "https://script.google.com/macros/s/AKfycbwEG3SrXw4izq1BFhOcf-tlxnSiS19HpeRI1d4JNzwxOYXcA2blXzg_YTZ5p7fqLz-i/exec";
+
+    // Build the iframe URL with query params
+    let iframeUrl = baseUrl;
+    if (order || code) {
+      iframeUrl += "?";
+      if (order) iframeUrl += "order=" + encodeURIComponent(order);
+      if (order && code) iframeUrl += "&";
+      if (code) iframeUrl += "code=" + encodeURIComponent(code);
+    }
+
+    // Set iframe src
+    document.getElementById("trackingFrame").src = iframeUrl;
+  </script>
 </body>
 </html>
