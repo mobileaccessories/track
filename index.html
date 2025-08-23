@@ -2,7 +2,6 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- Prevent pinch/zoom on most mobile browsers -->
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <title>Embedded Web App (Protected)</title>
   <style>
@@ -11,29 +10,24 @@
       margin: 0;
       padding: 0;
       background: #fbfbfb;
-      /* remove page-level scrolling */
-      overflow: hidden;
-      /* prevent text selection on the parent page */
+      overflow: hidden; /* block scrolling */
       -webkit-user-select: none;
       -moz-user-select: none;
       -ms-user-select: none;
       user-select: none;
     }
 
-    /* iframe fills the viewport */
     iframe {
       border: 0;
       width: 100%;
-      height: 100vh;
+      height: 100%;
       display: block;
-      /* keep iframe interactive */
       pointer-events: auto;
-      /* don't allow the iframe element itself to be selected */
       -webkit-user-select: none;
       user-select: none;
+      overflow: hidden; /* block iframe scroll */
     }
 
-    /* hide focus outline on the iframe element (visual only) */
     iframe:focus { outline: none; }
   </style>
 </head>
@@ -50,84 +44,32 @@
     (function () {
       const iframe = document.getElementById('appFrame');
 
-      /* 1) Block context menu and common copy actions on the parent page */
-      document.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-      }, { passive: false });
-
-      ['copy', 'cut', 'paste'].forEach(ev =>
-        document.addEventListener(ev, (e) => e.preventDefault())
-      );
-
+      // Prevent copy/paste/context menu/drag on parent
+      document.addEventListener('contextmenu', e => e.preventDefault(), {passive:false});
+      ['copy','cut','paste'].forEach(ev => document.addEventListener(ev, e => e.preventDefault()));
       document.addEventListener('dragstart', e => e.preventDefault());
-
-      /* 2) Prevent common zoom keyboard shortcuts (Ctrl/Cmd + +, -, 0, Ctrl+Wheel)
-         Keep this narrowly targeted so we don't break other keys too much. */
-      document.addEventListener('keydown', function (e) {
-        const ctrlOrMeta = e.ctrlKey || e.metaKey;
-        // block Ctrl/Cmd + + / - / = / 0
-        if (ctrlOrMeta && (e.key === '+' || e.key === '-' || e.key === '=' || e.key === '0')) {
-          e.preventDefault();
-        }
-        // block Ctrl/Cmd+Wheel-type shortcuts for saving/view-source and printing (optional)
-        if (ctrlOrMeta && (e.key.toLowerCase() === 's' || e.key.toLowerCase() === 'p' || e.key.toLowerCase() === 'u')) {
-          e.preventDefault();
-        }
-      }, { passive: false });
-
-      // block ctrl/cmd + mouse wheel zoom
-      window.addEventListener('wheel', function (e) {
-        if (e.ctrlKey || e.metaKey) e.preventDefault();
-      }, { passive: false });
-
-      /* 3) Try to block pinch-to-zoom on touch devices:
-         - prevent multi-touch gestures on the parent page.
-         Note: This won't necessarily stop pinch inside cross-origin iframe. */
-      let lastTouchCount = 0;
-      document.addEventListener('touchstart', function (e) {
-        if (e.touches && e.touches.length > 1) {
-          // multiple touches: prevent default to try to block pinch/zoom
-          e.preventDefault();
-        }
-        lastTouchCount = e.touches ? e.touches.length : 0;
-      }, { passive: false });
-
-      document.addEventListener('touchmove', function (e) {
-        if ((e.touches && e.touches.length > 1) || e.scale && e.scale !== 1) {
-          e.preventDefault();
-        }
-      }, { passive: false });
-
-      /* 4) Stop text selection via long press on the parent page */
       document.addEventListener('selectstart', e => e.preventDefault());
 
-      /* 5) Small UX: when user right-clicks the iframe specifically, block it too */
+      // Prevent keyboard zoom and shortcuts
+      document.addEventListener('keydown', e => {
+        const ctrlOrMeta = e.ctrlKey || e.metaKey;
+        if (ctrlOrMeta && ['+','-','=','0'].includes(e.key)) e.preventDefault();
+        if (ctrlOrMeta && ['s','p','u'].includes(e.key.toLowerCase())) e.preventDefault();
+      }, {passive:false});
+
+      // Prevent ctrl/cmd + wheel zoom
+      window.addEventListener('wheel', e => { if (e.ctrlKey || e.metaKey) e.preventDefault(); }, {passive:false});
+
+      // Prevent pinch-to-zoom gestures
+      document.addEventListener('touchstart', e => { if(e.touches && e.touches.length>1) e.preventDefault(); }, {passive:false});
+      document.addEventListener('touchmove', e => { if(e.touches && e.touches.length>1 || e.scale && e.scale!==1) e.preventDefault(); }, {passive:false});
+
+      // Optional: attempt to block context menu inside iframe (may fail cross-origin)
       iframe.addEventListener('load', () => {
-        iframe.contentWindow?.document?.addEventListener && /* may fail cross-origin */
+        try {
           iframe.contentWindow.document.addEventListener('contextmenu', e => e.preventDefault());
+        } catch(e) { /* ignore cross-origin errors */ }
       });
-
-      // Because of cross-origin restrictions, the above attempt to install
-      // a handler inside the iframe may fail (and that's expected). Parent-level
-      // protections still apply but cannot modify the iframe DOM if cross-origin.
-
-      /* 6) Optional: show a brief overlay when the user tries common shortcuts (not destructive)
-         — commented out so you can enable if desired.
-      function flashNotice(msg) {
-        const n = document.createElement('div');
-        n.textContent = msg;
-        Object.assign(n.style, {
-          position: 'fixed', bottom: '12px', right: '12px',
-          background: 'rgba(0,0,0,0.7)', color: '#fff', padding: '8px 12px',
-          borderRadius: '6px', zIndex: 999999, fontSize: '13px'
-        });
-        document.body.appendChild(n);
-        setTimeout(() => n.remove(), 1400);
-      }
-      */
-
-      /* 7) Note: keep sandbox attributes as you have so camera/mic works.
-         Do NOT set sandbox to something that removes allow-same-origin if iframe needs to access storage or cookies. */
     })();
   </script>
 </body>
