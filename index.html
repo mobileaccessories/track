@@ -443,7 +443,7 @@
     }
 
     async function fetchOrderData(order, code) {
-      const API_URL = 'https://script.google.com/macros/s/AKfycbzmBIKpNaHlBzGVjGtW5LXOoUG5WXrGLtjcl7N477bGPMGsbYPMaJGPf1vO7yTayUoY/exec'; // Replace with your URL
+      const API_URL = 'https://script.google.com/macros/s/AKfycbwqlhxnEFR7umGfnIUGKHgWqPwUIGK019zSaoHoYRgbnn2DI-6e9qS21TxYgay3QEIl/exec'; // Replace with your URL
       if (!API_URL || API_URL.includes('YOUR_SCRIPT_ID')) return {error:'API_URL not configured.'};
       const url=`${API_URL}?order=${encodeURIComponent(order)}&code=${encodeURIComponent(code)}`;
       const controller=new AbortController();
