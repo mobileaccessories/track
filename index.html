@@ -1,76 +1,554 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>Embedded Web App (Protected)</title>
+  <meta charset="utf-8"/>
+  <title>Track Order</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <style>
-    html, body {
-      height: 100%;
-      margin: 0;
-      padding: 0;
-      background: #fbfbfb;
-      overflow: hidden; /* block scrolling */
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
-      user-select: none;
+    :root {
+      --bg:#ffffff;
+      --card:#fff;
+      --text:#1f1f1f;
+      --muted:#6f6f6f;
+      --border:#e4e7ec;
+      --radius:12px;
+      --shadow:0 22px 80px -16px rgba(0,0,0,0.08);
+      --font: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+      --transition:.25s cubic-bezier(.4,.2,.2,1);
+      --max:900px;
     }
-
-    iframe {
-      border: 0;
-      width: 100%;
-      height: 100%;
-      display: block;
-      pointer-events: auto;
-      -webkit-user-select: none;
-      user-select: none;
-      overflow: hidden; /* block iframe scroll */
+    *{box-sizing:border-box;}
+    body {
+      margin:0;
+      background:var(--bg);
+      color:var(--text);
+      font-family: var(--font);
+      -webkit-font-smoothing:antialiased;
+      padding:32px 16px;
     }
-
-    iframe:focus { outline: none; }
+    .container {
+      max-width: var(--max);
+      margin:0 auto;
+      padding:0 12px;
+    }
+    h1 {
+      margin:0;
+      font-size:2.1rem;
+      font-weight:700;
+      letter-spacing:0.5px;
+      line-height:1.1;
+    }
+    .sub {
+      margin:8px 0 22px;
+      font-size:0.95rem;
+      color:var(--muted);
+    }
+    .form-row {
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-bottom:20px;
+      align-items:flex-start;
+    }
+    .field-wrapper {
+      position:relative;
+      flex:1;
+      min-width:160px;
+    }
+    .floating-input {
+      width:100%;
+      padding:16px 14px 12px;
+      border:1px solid var(--border);
+      border-radius:10px;
+      background:#fff;
+      font-size:1rem;
+      outline:none;
+      transition:all var(--transition);
+      position:relative;
+    }
+    .floating-input:focus {
+      border-color:#111;
+      box-shadow:0 0 0 4px rgba(17,17,17,0.08);
+    }
+    .floating-label {
+      position:absolute;
+      top:14px;
+      left:14px;
+      pointer-events:none;
+      font-size:0.65rem;
+      color:var(--muted);
+      background:var(--card);
+      padding:0 4px;
+      transition:all var(--transition);
+      transform-origin: left top;
+    }
+    .has-value .floating-label,
+    .floating-input:focus + .floating-label {
+      transform: translateY(-8px) scale(.85);
+      background: var(--bg);
+      color:#111;
+    }
+    .small {
+      font-size:0.65rem;
+      color:var(--muted);
+      margin-top:4px;
+    }
+    .track-btn {
+      padding:16px 28px;
+      background:#111;
+      color:#fff;
+      border:none;
+      border-radius:10px;
+      font-weight:600;
+      cursor:pointer;
+      font-size:1rem;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      transition:filter var(--transition);
+      flex-shrink:0;
+    }
+    .track-btn:hover { filter:brightness(1.08); }
+    .card {
+      background:var(--card);
+      border-radius:var(--radius);
+      padding:24px 26px;
+      margin-bottom:24px;
+      position:relative;
+      border:1px solid var(--border);
+      box-shadow: var(--shadow);
+      overflow:hidden;
+      transition: background .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+    .cancel-banner {
+      display:block;
+      padding:8px 12px;
+      margin-bottom:12px;
+      background: linear-gradient(90deg, rgba(231,179,179,0.12), rgba(255,255,255,0));
+      color: #7a2f2f;
+      border-bottom: 1px solid rgba(244,199,199,0.5);
+      font-weight:700;
+      letter-spacing:0.4px;
+      border-radius: 8px;
+    }
+    .progress {
+      margin-bottom:22px;
+      position: relative;
+    }
+    .progress-steps {
+      display:flex;
+      gap:8px;
+      position:relative;
+      padding:0;
+      list-style:none;
+      margin:0;
+    }
+    .step {
+      flex:1;
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      font-size:0.55rem;
+      text-align:center;
+      color:var(--muted);
+      z-index:1;
+    }
+    .step-circle {
+      width:28px;
+      height:28px;
+      border-radius:50%;
+      background:#e8ebf0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size:12px;
+      font-weight:600;
+      position:relative;
+      transition:all var(--transition);
+    }
+    .step.completed .step-circle {
+      background:#111;
+      color:#fff;
+    }
+    .step-label {
+      margin-top:6px;
+      text-transform:none;
+      line-height:1.2;
+    }
+    .connector {
+      position:absolute;
+      top:14px;
+      left:0;
+      right:0;
+      height:4px;
+      background:#e8ebf0;
+      border-radius:2px;
+      z-index:0;
+      overflow:hidden;
+    }
+    .connector-fill {
+      height:100%;
+      background:#111;
+      width:0;
+      transition:width var(--transition);
+      border-radius:2px;
+    }
+    .summary-grid {
+      display:grid;
+      grid-template-columns: repeat(auto-fit,minmax(150px,1fr));
+      gap:18px;
+      margin-top:4px;
+    }
+    .field {
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+    }
+    .label {
+      font-size:0.55rem;
+      text-transform:uppercase;
+      letter-spacing:1px;
+      color:var(--muted);
+      font-weight:600;
+    }
+    .value {
+      font-size:1rem;
+      font-weight:600;
+      word-break:break-word;
+    }
+    .history {
+      margin-top:18px;
+    }
+    .history-item {
+      display:flex;
+      gap:16px;
+      padding:14px 0;
+      border-bottom:1px solid var(--border);
+      align-items:flex-start;
+    }
+    .history-time {
+      flex:0 0 110px;
+      font-size:0.55rem;
+      color:var(--muted);
+      text-align:right;
+      line-height:1.2;
+      white-space:nowrap;
+    }
+    .history-detail {
+      flex:1;
+      font-size:0.9rem;
+      line-height:1.3;
+    }
+    .error-box {
+      background:#fff5f5;
+      border:1px solid #e7c4c4;
+      padding:14px 16px;
+      border-radius:8px;
+      color:#a33;
+      margin-bottom:14px;
+      font-weight:600;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .success-box {
+      background:#eef8ee;
+      border:1px solid #c9e5ca;
+      padding:14px 16px;
+      border-radius:8px;
+      color:#1f5f2f;
+      margin-bottom:14px;
+      font-weight:600;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+    .loader-small {
+      display:inline-block;
+      width:14px;
+      height:14px;
+      border:2px solid rgba(0,0,0,0.15);
+      border-left-color:#111;
+      border-radius:50%;
+      animation:spin .8s linear infinite;
+      vertical-align:middle;
+      margin-right:6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .placeholder {
+      background: linear-gradient(90deg, rgba(245,245,245,1) 25%, rgba(235,235,235,1) 50%, rgba(245,245,245,1) 75%);
+      background-size:200% 100%;
+      animation: shimmer 1.4s ease-in-out infinite;
+      border-radius:6px;
+    }
+    @keyframes shimmer { to { background-position: -200% 0; } }
+    .meta { display:flex; flex-wrap:wrap; gap:12px; margin-top:6px; }
+    @media (max-width:800px){
+      .history-item { flex-direction:column; }
+      .history-time { text-align:left; margin-bottom:6px; flex:0; }
+    }
   </style>
 </head>
 <body>
-  <iframe
-    id="appFrame"
-    src="https://script.google.com/macros/s/AKfycbzO4EGc5EvuCKDovOaVr1LQvig9-zI7_ZkMxf6Ac3PdYiFxXpjUPXBTf8Hfj2OvIbDp/exec"
-    allow="camera; microphone"
-    sandbox="allow-scripts allow-same-origin allow-forms"
-    scrolling="no"
-  ></iframe>
+  <div class="container" aria-label="Order tracking">
+    <h1>Track Your Order</h1>
+    <div class="sub">Enter your order number and access code to see live status</div>
+
+    <div class="card" aria-label="Search panel">
+      <div class="form-row">
+        <div class="field-wrapper" style="flex:2;">
+          <input id="orderInput" class="floating-input" aria-label="Order number" autocomplete="off" />
+          <label class="floating-label" for="orderInput">Order number</label>
+        </div>
+        <div class="field-wrapper" style="flex:1; min-width:140px;">
+          <input id="codeInput" class="floating-input" aria-label="Access code" autocomplete="off" />
+          <label class="floating-label" for="codeInput">Access code</label>
+        </div>
+        <div style="display:flex; align-items:flex-end;">
+          <button class="track-btn" onclick="search()" aria-label="Track order">
+            <span>Track</span>
+          </button>
+        </div>
+      </div>
+      <div class="small">You can copy the tracking link with order & code in URL to prefill next time.</div>
+    </div>
+
+    <div id="messageArea"></div>
+    <div id="result"></div>
+  </div>
 
   <script>
-    (function () {
-      const iframe = document.getElementById('appFrame');
+    const STEPS = ['Order Placed','Picked up','Out for delivery','Delivered'];
+    const TIMEOUT_MS = 12000;
 
-      // Prevent copy/paste/context menu/drag on parent
-      document.addEventListener('contextmenu', e => e.preventDefault(), {passive:false});
-      ['copy','cut','paste'].forEach(ev => document.addEventListener(ev, e => e.preventDefault()));
-      document.addEventListener('dragstart', e => e.preventDefault());
-      document.addEventListener('selectstart', e => e.preventDefault());
+    function formatDate(d) {
+      if (!d) return '—';
+      const dt = new Date(d);
+      if (isNaN(dt)) return '—';
+      return dt.toLocaleString(undefined, {
+        day:'2-digit', month:'short', year:'numeric',
+        hour:'2-digit', minute:'2-digit', hour12:true
+      }).replace(/,/g,'');
+    }
 
-      // Prevent keyboard zoom and shortcuts
-      document.addEventListener('keydown', e => {
-        const ctrlOrMeta = e.ctrlKey || e.metaKey;
-        if (ctrlOrMeta && ['+','-','=','0'].includes(e.key)) e.preventDefault();
-        if (ctrlOrMeta && ['s','p','u'].includes(e.key.toLowerCase())) e.preventDefault();
-      }, {passive:false});
+    function showMessage(text, type='error') {
+      const area = document.getElementById('messageArea');
+      if (!text) { area.innerHTML=''; return; }
+      if (type==='error') area.innerHTML=`<div class="error-box" role="alert"><div>${text}</div></div>`;
+      else area.innerHTML=`<div class="success-box" role="status"><div>${text}</div></div>`;
+    }
 
-      // Prevent ctrl/cmd + wheel zoom
-      window.addEventListener('wheel', e => { if (e.ctrlKey || e.metaKey) e.preventDefault(); }, {passive:false});
-
-      // Prevent pinch-to-zoom gestures
-      document.addEventListener('touchstart', e => { if(e.touches && e.touches.length>1) e.preventDefault(); }, {passive:false});
-      document.addEventListener('touchmove', e => { if(e.touches && e.touches.length>1 || e.scale && e.scale!==1) e.preventDefault(); }, {passive:false});
-
-      // Optional: attempt to block context menu inside iframe (may fail cross-origin)
-      iframe.addEventListener('load', () => {
-        try {
-          iframe.contentWindow.document.addEventListener('contextmenu', e => e.preventDefault());
-        } catch(e) { /* ignore cross-origin errors */ }
+    function setFloatingLabels() {
+      document.querySelectorAll('.field-wrapper').forEach(w => {
+        const input = w.querySelector('.floating-input');
+        if (!input) return;
+        if (input.value.trim()) w.classList.add('has-value'); else w.classList.remove('has-value');
+        input.addEventListener('input',()=>{ input.value.trim()? w.classList.add('has-value') : w.classList.remove('has-value'); });
+        input.addEventListener('focus',()=>w.classList.add('has-value'));
       });
-    })();
+    }
+
+    function persistSession(order, code) {
+      try {
+        localStorage.setItem('tracking_order', order);
+        localStorage.setItem('tracking_code', code);
+        const params = new URLSearchParams(window.location.search);
+        params.set('order', order);
+        params.set('code', code);
+        window.history.replaceState({}, '', `${location.pathname}?${params}`);
+      } catch {}
+    }
+
+    function loadSession() {
+      try {
+        return {
+          order: localStorage.getItem('tracking_order') || '',
+          code: localStorage.getItem('tracking_code') || ''
+        };
+      } catch { return { order:'', code:'' }; }
+    }
+
+    function getStepIndex(status) {
+      if (!status) return 0;
+      const s = status.toLowerCase();
+      if (s.includes('placed')) return 0;
+      if (s.includes('picked')) return 1;
+      if (s.includes('out')) return 2;
+      if (s.includes('deliver')) return 3;
+      return 0;
+    }
+
+    function canonicalStatusLocal(s) {
+      if (!s) return '';
+      const t = s.toLowerCase().trim().replace(/\s+/g,' ');
+      if (['cancelled','canceled','cancel','order cancelled','order canceled'].includes(t)) return 'cancelled';
+      if (t.includes('cancel')) return 'cancelled';
+      return t;
+    }
+
+    function renderProgress(status) {
+      const idxRaw = getStepIndex(status);
+      const isCancelled = canonicalStatusLocal(status)==='cancelled';
+      const idx = isCancelled? -1: idxRaw;
+      let stepsHtml = '';
+      STEPS.forEach((label,i)=>{
+        const completed = !isCancelled && i<=idx;
+        stepsHtml+=`<div class="step ${completed?'completed':''}"><div class="step-circle">${completed?'&#10003;':i+1}</div><div class="step-label">${label}</div></div>`;
+      });
+      return {html:`<div class="card" aria-label="Order summary">
+          <div class="progress" aria-label="Progress">
+            <div style="position:relative; margin-bottom:8px;">
+              <div class="connector" aria-hidden="true"><div class="connector-fill" style="width:0%;"></div></div>
+            </div>
+            <div class="progress-steps">${stepsHtml}</div>
+          </div>
+          <div class="summary-grid"></div>
+        </div>`, idx};
+    }
+
+    function adjustProgressFill(container, idx) {
+      const progressContainer = container.querySelector('.progress');
+      if (!progressContainer) return;
+      const fill = progressContainer.querySelector('.connector-fill');
+      const steps = progressContainer.querySelectorAll('.step');
+      if (idx<0) { fill.style.width='0%'; steps.forEach(s=>s.classList.remove('completed')); return; }
+      if (!steps[idx]) return;
+      const circle = steps[idx].querySelector('.step-circle');
+      const bar = progressContainer.querySelector('.connector');
+      const barRect = bar.getBoundingClientRect();
+      const circleRect = circle.getBoundingClientRect();
+      let extra=0;
+      if (steps[idx+1]) {
+        const nextCircle = steps[idx+1].querySelector('.step-circle');
+        const currCenter = circleRect.left+circleRect.width/2;
+        const nextCenter = nextCircle.getBoundingClientRect().left + nextCircle.getBoundingClientRect().width/2;
+        extra = Math.max(0,nextCenter-currCenter)*0.25;
+      } else extra = circleRect.width*0.25;
+      let targetPx = (circleRect.right-barRect.left)+extra;
+      if (targetPx>barRect.width) targetPx=barRect.width;
+      fill.style.width=(targetPx/barRect.width*100)+'%';
+    }
+
+    function showLoadingSkeleton() {
+      const html = `<div class="card">
+          <div class="placeholder" style="height:20px;width:60%;margin-bottom:16px;border-radius:6px;"></div>
+          <div class="summary-grid">
+            <div class="field"><div class="label placeholder" style="height:12px;width:80px;"></div><div class="value placeholder" style="height:16px;width:120px;margin-top:6px;"></div></div>
+            <div class="field"><div class="label placeholder" style="height:12px;width:80px;"></div><div class="value placeholder" style="height:16px;width:120px;margin-top:6px;"></div></div>
+            <div class="field"><div class="label placeholder" style="height:12px;width:80px;"></div><div class="value placeholder" style="height:16px;width:120px;margin-top:6px;"></div></div>
+          </div>
+        </div>`;
+      document.getElementById('result').innerHTML=html;
+    }
+
+    async function fetchOrderData(order, code) {
+      const API_URL = 'https://script.google.com/macros/s/AKfycbwa-ZKvAznMeumIdRqRg4psw-HHkIIKDxGlaj3NZMXFTFpCVDe9pdQ1azVa5q-dLRhq5Q/exec'; // Replace with your URL
+      if (!API_URL || API_URL.includes('YOUR_SCRIPT_ID')) return {error:'API_URL not configured.'};
+      const url=`${API_URL}?order=${encodeURIComponent(order)}&code=${encodeURIComponent(code)}`;
+      const controller=new AbortController();
+      const timeout=setTimeout(()=>controller.abort(),TIMEOUT_MS);
+      try {
+        const response = await fetch(url,{method:'GET',mode:'cors',cache:'no-store',signal:controller.signal});
+        clearTimeout(timeout);
+        if (!response.ok) return {error:`HTTP ${response.status}`};
+        const data = await response.json();
+        return data;
+      } catch(err){ clearTimeout(timeout); return {error:err.message||'Fetch failed'}; }
+    }
+
+    async function search() {
+      const order=document.getElementById('orderInput').value.trim();
+      const code=document.getElementById('codeInput').value.trim();
+      if (!order) { showMessage('Order number required.'); return; }
+      if (!code) { showMessage('Access code required.'); return; }
+      showMessage('');
+      showLoadingSkeleton();
+      const resp = await fetchOrderData(order, code);
+      if (!resp || resp.error) { renderError(resp?resp.error:'Unknown error'); return; }
+      persistSession(order, code);
+      render(resp);
+    }
+
+    function renderError(msg) {
+      document.getElementById('result').innerHTML='';
+      showMessage(msg,'error');
+    }
+
+    function render(resp) {
+      document.getElementById('result').innerHTML='';
+      if (resp.error) { renderError(resp.error); return; }
+      const o=resp.order;
+      const isCancelled = canonicalStatusLocal(o.CurrentStatus)==='cancelled';
+      const {html, idx} = renderProgress(o.CurrentStatus);
+      const wrapper=document.createElement('div'); wrapper.innerHTML=html;
+
+      if (isCancelled) {
+        const cardEl = wrapper.querySelector('.card');
+        if (cardEl) {
+          const ban = document.createElement('div'); ban.className='cancel-banner'; ban.textContent='Order Cancelled';
+          cardEl.insertBefore(ban, cardEl.firstChild);
+        }
+      }
+
+      const summaryGrid = wrapper.querySelector('.summary-grid');
+      summaryGrid.innerHTML=`
+        <div class="field"><div class="label">Order #</div><div class="value">${o.OrderNumber||'-'}</div></div>
+        <div class="field"><div class="label">Customer</div><div class="value">${o.CustomerName||'-'}</div></div>
+        <div class="field"><div class="label">Status</div><div class="value">${o.CurrentStatus||'-'}</div></div>
+        <div class="field"><div class="label">Location</div><div class="value">${o.CurrentLocation||'-'}</div></div>
+        <div class="field"><div class="label">Delivery Person</div><div class="value">${o.DeliveryPerson||'-'}</div></div>
+        <div class="field"><div class="label">Last Update</div><div class="value">${formatDate(o.LastUpdate)||'-'}</div></div>`;
+
+      document.getElementById('result').appendChild(wrapper);
+      requestAnimationFrame(()=>adjustProgressFill(wrapper,idx));
+
+      if (resp.history && resp.history.length) {
+        let histHtml=`<div class="card" aria-label="Timeline"><div class="label" style="margin-bottom:8px;font-size:0.75rem;text-transform:uppercase;">Timeline</div>`;
+        resp.history.forEach(h=>{
+          histHtml+=`<div class="history">
+            <div class="history-item">
+              <div class="history-time">${formatDate(h.Timestamp)}</div>
+              <div class="history-detail">
+                <div><strong>${h.Status}</strong> — ${h.Location||'-'}</div>
+                <div class="small">By: ${h.UpdatedBy||'-'}${h.Notes?' | '+h.Notes:''}</div>
+              </div>
+            </div>
+          </div>`;
+        });
+        histHtml+='</div>';
+        const histWrapper=document.createElement('div'); histWrapper.innerHTML=histHtml;
+        document.getElementById('result').appendChild(histWrapper);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded',()=>{
+      setFloatingLabels();
+      const params=new URLSearchParams(window.location.search);
+      const orderParam=params.get('order')||'';
+      const codeParam=params.get('code')||'';
+      const session=loadSession();
+
+      if (orderParam) document.getElementById('orderInput').value=orderParam;
+      else if (session.order) document.getElementById('orderInput').value=session.order;
+
+      if (codeParam) document.getElementById('codeInput').value=codeParam;
+      else if (session.code) document.getElementById('codeInput').value=session.code;
+
+      document.querySelectorAll('.field-wrapper').forEach(w=>{
+        const input=w.querySelector('.floating-input'); if (input) input.dispatchEvent(new Event('input'));
+      });
+
+      if (document.getElementById('orderInput').value.trim() &&
+          document.getElementById('codeInput').value.trim()) {
+        search();
+      }
+
+      ['orderInput','codeInput'].forEach(id=>{
+        const el=document.getElementById(id);
+        el.addEventListener('keyup', e=>{ if (e.key==='Enter') search(); });
+      });
+    });
   </script>
 </body>
 </html>
